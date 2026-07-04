@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: livecount
+      POSTGRES_PASSWORD: livecount
+      POSTGRES_DB: livecount
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U livecount -d livecount"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: ./apps/web
+    image: live-counting-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://livecount:livecount@db:5432/livecount
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production-use-long-secret}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin Pemilu}
+      SPREADSHEET_ID: ${SPREADSHEET_ID:-}
+      SHEET_NAME: ${SHEET_NAME:-Form Responses 1}
+      GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT:-}
+      SYNC_INTERVAL_MS: ${SYNC_INTERVAL_MS:-120000}
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

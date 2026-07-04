@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+apps/web/node_modules/
+
+# Build
+apps/web/.next/
+apps/web/out/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+apps/web/.env
+apps/web/.env.*
+!apps/web/.env.example
+service-account*.json
+*-service-account.json
+
+# IDE / OS
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
