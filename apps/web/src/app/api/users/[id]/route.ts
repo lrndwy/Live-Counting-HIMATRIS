@@ -51,3 +51,40 @@ export async function PATCH(
     ),
   });
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireSession(["admin"]);
+  if (auth.error) return auth.error;
+
+  const { id } = await context.params;
+  if (auth.session.id === id) {
+    return NextResponse.json(
+      { error: "Tidak dapat menghapus akun sendiri" },
+      { status: 400 }
+    );
+  }
+
+  const existing = await query<{ role: string }>(
+    `SELECT role FROM users WHERE id = $1`,
+    [id]
+  );
+  const user = existing.rows[0];
+  if (!user) {
+    return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+  }
+  if (user.role === "admin") {
+    return NextResponse.json(
+      { error: "Tidak dapat menghapus admin" },
+      { status: 400 }
+    );
+  }
+
+  await query(`UPDATE votes SET reviewed_by = NULL WHERE reviewed_by = $1`, [
+    id,
+  ]);
+  await query(`DELETE FROM users WHERE id = $1`, [id]);
+  return NextResponse.json({ ok: true });
+}

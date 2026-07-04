@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
       title="Analytics"
       description="Ringkasan pemilu dan status verifikasi suara"
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard title="Mahasiswa" value={data?.mahasiswa.total ?? "—"} />
         <StatCard
           title="Sudah memilih"
@@ -100,17 +100,26 @@ export default function AnalyticsPage() {
         <StatCard title="Suara SAH" value={data?.votes.sah ?? "—"} />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:mt-6 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Persentase per paslon</CardTitle>
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
+              Persentase per paslon
+            </CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-56 px-2 sm:h-80 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.paslon ?? []}>
+              <BarChart
+                data={data?.paslon ?? []}
+                margin={{ top: 8, right: 4, left: -12, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nomor" tickFormatter={(v) => `Paslon ${v}`} />
-                <YAxis domain={[0, 100]} unit="%" />
+                <XAxis
+                  dataKey="nomor"
+                  tickFormatter={(v) => `P${v}`}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis domain={[0, 100]} unit="%" width={36} tick={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(value) => [`${value}%`, "Persentase"]}
                   labelFormatter={(_, payload) => {
@@ -133,10 +142,10 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status suara</CardTitle>
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">Status suara</CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-56 px-2 sm:h-80 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -145,8 +154,10 @@ export default function AnalyticsPage() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  label
+                  outerRadius={70}
+                  label={({ percent }) =>
+                    `${Math.round((percent ?? 0) * 100)}%`
+                  }
                 >
                   {voteStatusData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -159,17 +170,26 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
               Antrian pending (cek otomatis)
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-56 px-1 sm:h-80 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={eligibilityData} layout="vertical">
+              <BarChart
+                data={eligibilityData}
+                layout="vertical"
+                margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={130} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={88}
+                  tick={{ fontSize: 10 }}
+                />
                 <Tooltip />
                 <Bar dataKey="value" fill="#0ea5e9" radius={[0, 6, 6, 0]} />
               </BarChart>
@@ -178,10 +198,12 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Partisipasi mahasiswa</CardTitle>
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
+              Partisipasi mahasiswa
+            </CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-56 px-2 sm:h-80 sm:px-6">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -199,9 +221,11 @@ export default function AnalyticsPage() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={100}
-                  label
+                  innerRadius={35}
+                  outerRadius={70}
+                  label={({ percent }) =>
+                    `${Math.round((percent ?? 0) * 100)}%`
+                  }
                 >
                   <Cell fill="#10b981" />
                   <Cell fill="#f59e0b" />
@@ -227,14 +251,14 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <CardHeader className="px-3 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
+        <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold tabular-nums">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+        <p className="text-2xl font-bold tabular-nums sm:text-3xl">{value}</p>
+        {hint && <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">{hint}</p>}
       </CardContent>
     </Card>
   );

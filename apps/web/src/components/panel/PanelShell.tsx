@@ -29,37 +29,45 @@ export function PanelShell({
 
   return (
     <AuthGuard roles={roles}>
-      <div className="flex min-h-screen bg-background">
-        <aside className="hidden w-64 shrink-0 border-r border-sidebar-border md:block">
-          <div className="sticky top-0 h-screen">
-            <AppSidebar />
-          </div>
+      <div className="flex h-dvh min-w-0 overflow-hidden bg-background">
+        <aside className="hidden h-full w-64 shrink-0 overflow-y-auto border-r border-sidebar-border md:block">
+          <AppSidebar />
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur md:px-6">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="flex shrink-0 items-start gap-3 border-b bg-background/95 px-3 py-3 backdrop-blur sm:items-center sm:px-4 md:px-6">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="mt-0.5 shrink-0 md:hidden"
+                >
                   <Menu className="h-4 w-4" />
                   <span className="sr-only">Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0">
+              <SheetContent side="left" className="w-[min(100%,18rem)] p-0">
                 <SheetHeader className="sr-only">
                   <SheetTitle>Navigasi</SheetTitle>
                 </SheetHeader>
                 <AppSidebar onNavigate={() => setOpen(false)} />
               </SheetContent>
             </Sheet>
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base font-semibold tracking-tight sm:text-lg">
+                {title}
+              </h1>
               {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
+                  {description}
+                </p>
               )}
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
+            {children}
+          </main>
         </div>
       </div>
     </AuthGuard>

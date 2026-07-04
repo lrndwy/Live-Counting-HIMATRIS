@@ -9,14 +9,10 @@ export function parsePaslonId(pilihan: string): string {
   return "unknown";
 }
 
-/** Stable vote ID from email + timestamp */
-export function voteIdFromRow(email: string, timestamp: string): string {
+/** Stable vote ID from NIM + timestamp */
+export function voteIdFromRow(nim: string, timestamp: string): string {
   return createHash("sha256")
-    .update(`${email.trim().toLowerCase()}|${timestamp.trim()}`)
+    .update(`${nim.trim().toLowerCase()}|${timestamp.trim()}`)
     .digest("hex")
     .slice(0, 32);
-}
-
-export function cell(row: string[], index: number): string {
-  return (row[index] ?? "").trim();
 }

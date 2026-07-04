@@ -1,6 +1,6 @@
 # Live Counting Pemilihan Himpunan
 
-Website live counting pemilihan ketua & wakil ketua himpunan. Data suara dari Google Spreadsheet diverifikasi PANWASLU (`SAH` / `TIDAK_SAH`); hanya suara **SAH** yang dihitung di halaman publik.
+Website live counting pemilihan ketua & wakil ketua himpunan. Data suara di-import dari file Excel/CSV (export form), lalu diverifikasi PANWASLU (`SAH` / `TIDAK_SAH`); hanya suara **SAH** yang dihitung di halaman publik.
 
 ## Menjalankan
 
@@ -30,9 +30,24 @@ Migrasi database dan seed admin berjalan otomatis saat container start.
 1. Login sebagai ADMIN.
 2. **Mahasiswa** — import Excel (kolom: `NIM`, `NAMA`, `KELAS`, `ANGKATAN`, `PRODI`).
 3. **Paslon** — tambah pasangan calon (nomor `01`, `02`, … sesuai form).
-4. **Sinkronisasi** — isi Spreadsheet ID (atau set di `.env`).
-5. **Users** — buat akun PANWASLU.
-6. Sinkronkan suara, lalu PANWASLU verifikasi di **Dashboard**.
+4. **Users** — buat akun PANWASLU.
+5. **Verifikasi Suara** — import file suara (export form / spreadsheet), lalu PANWASLU verifikasi.
+
+### Format file suara
+
+Export dari form / spreadsheet dengan kolom:
+
+| Kolom | Header |
+| --- | --- |
+| Timestamp | `Timestamp` |
+| Nama | `Nama Lengkap` |
+| NIM | `NIM / NPM` |
+| Prodi | `Program Studi` |
+| Kelas | `Kelas` |
+| Pilihan | `Silakan Pilih Salah Satu Pasang Calon` (mis. `Paslon 01 - Dimas & Aldo`) |
+| Pernyataan | `Pernyataan Pribadi` |
+
+Format: `.xlsx`, `.xls`, atau `.csv`. Import ulang aman — baris yang sama (NIM + timestamp) diperbarui, bukan diduplikasi.
 
 ### Pengecekan otomatis suara
 
@@ -55,16 +70,7 @@ AUTH_SECRET=ganti-dengan-secret-panjang-acak
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=admin123
 ADMIN_NAME=Admin Pemilu
-
-# Opsional — Google Sheets
-SPREADSHEET_ID=
-SHEET_NAME=Form Responses 1
-GOOGLE_SERVICE_ACCOUNT=
 ```
-
-Untuk Sheets: enable Google Sheets API, buat service account, share spreadsheet sebagai Viewer, lalu isi `SPREADSHEET_ID` dan `GOOGLE_SERVICE_ACCOUNT` (JSON satu baris).
-
-Kolom spreadsheet A–H: Timestamp, Email Address, Nama Lengkap, NIM / NPM, Program Studi, KELAS, pilihan paslon, PERNYATAAN PRIBADI.
 
 ## Halaman
 
@@ -73,8 +79,7 @@ Kolom spreadsheet A–H: Timestamp, Email Address, Nama Lengkap, NIM / NPM, Prog
 | `/` | Live counting publik (persentase + grafik) |
 | `/login` | Login staff |
 | `/dashboard` | Analytics (sidebar) |
-| `/dashboard/votes` | Verifikasi suara |
+| `/dashboard/votes` | Verifikasi suara + import (admin) |
 | `/dashboard/mahasiswa` | Master mahasiswa (pagination + import) |
 | `/dashboard/paslon` | Kelola paslon |
 | `/dashboard/users` | Kelola PANWASLU |
-| `/dashboard/sync` | Sinkronisasi spreadsheet |

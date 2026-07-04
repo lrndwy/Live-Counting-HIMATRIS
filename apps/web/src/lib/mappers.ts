@@ -6,7 +6,6 @@ import type {
   Mahasiswa,
   MahasiswaStatus,
   Paslon,
-  SyncSettings,
   UserProfile,
   Vote,
   VoteStatus,
@@ -92,6 +91,7 @@ export function mapPaslon(row: {
   nama_ketua: string;
   nama_wakil: string;
   foto_url: string | null;
+  visi_misi_url: string | null;
   aktif: boolean;
 }): Paslon {
   return {
@@ -100,6 +100,7 @@ export function mapPaslon(row: {
     namaKetua: row.nama_ketua,
     namaWakil: row.nama_wakil,
     fotoUrl: row.foto_url,
+    visiMisiUrl: row.visi_misi_url,
     aktif: row.aktif,
   };
 }
@@ -117,30 +118,5 @@ export function mapUser(row: {
     displayName: row.display_name,
     role: row.role,
     active: row.active,
-  };
-}
-
-export function mapSyncSettings(row: {
-  spreadsheet_id: string;
-  sheet_name: string;
-  last_sync_at: Date | null;
-  last_sync_status: string | null;
-  last_error: string | null;
-  last_upserted: number | null;
-  last_created: number | null;
-  last_updated: number | null;
-}): SyncSettings {
-  return {
-    spreadsheetId: row.spreadsheet_id,
-    sheetName: row.sheet_name,
-    lastSyncAt: row.last_sync_at?.toISOString() ?? null,
-    lastSyncStatus:
-      row.last_sync_status === "ok" || row.last_sync_status === "error"
-        ? row.last_sync_status
-        : null,
-    lastError: row.last_error,
-    lastUpserted: row.last_upserted,
-    lastCreated: row.last_created,
-    lastUpdated: row.last_updated,
   };
 }

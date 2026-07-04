@@ -26,8 +26,11 @@ CREATE TABLE IF NOT EXISTS paslon (
   nama_ketua TEXT NOT NULL,
   nama_wakil TEXT NOT NULL,
   foto_url TEXT,
+  visi_misi_url TEXT,
   aktif BOOLEAN NOT NULL DEFAULT true
 );
+
+ALTER TABLE paslon ADD COLUMN IF NOT EXISTS visi_misi_url TEXT;
 
 CREATE TABLE IF NOT EXISTS votes (
   id TEXT PRIMARY KEY,

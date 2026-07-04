@@ -32,10 +32,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-dvh items-center justify-center bg-slate-100 px-3 py-8 sm:px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
         <p className="text-sm font-medium text-indigo-600">Panel Panitia</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">Login</h1>
+        <h1 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">Login</h1>
         <p className="mt-2 text-sm text-slate-500">
           Masuk sebagai ADMIN atau PANWASLU untuk mengelola verifikasi suara.
         </p>

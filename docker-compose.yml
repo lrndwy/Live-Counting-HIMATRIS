@@ -28,14 +28,13 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       ADMIN_NAME: ${ADMIN_NAME:-Admin Pemilu}
-      SPREADSHEET_ID: ${SPREADSHEET_ID:-}
-      SHEET_NAME: ${SHEET_NAME:-Form Responses 1}
-      GOOGLE_SERVICE_ACCOUNT: ${GOOGLE_SERVICE_ACCOUNT:-}
-      SYNC_INTERVAL_MS: ${SYNC_INTERVAL_MS:-120000}
       NODE_ENV: production
+    volumes:
+      - paslon_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
+  paslon_uploads:

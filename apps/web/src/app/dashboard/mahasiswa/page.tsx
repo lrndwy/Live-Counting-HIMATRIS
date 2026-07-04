@@ -133,33 +133,39 @@ export default function MahasiswaPage() {
       description="Master pemilih dengan import Excel dan pagination"
       roles={["admin"]}
     >
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total</CardTitle>
+          <CardHeader className="px-2 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
+            <CardTitle className="text-[11px] text-muted-foreground sm:text-sm">
+              Total
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.total}</p>
+          <CardContent className="px-2 pb-3 sm:px-6 sm:pb-6">
+            <p className="text-xl font-bold sm:text-3xl">{stats.total}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="px-2 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
+            <CardTitle className="text-[11px] text-muted-foreground sm:text-sm">
               Belum memilih
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-amber-600">{stats.belumMemilih}</p>
+          <CardContent className="px-2 pb-3 sm:px-6 sm:pb-6">
+            <p className="text-xl font-bold text-amber-600 sm:text-3xl">
+              {stats.belumMemilih}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="px-2 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
+            <CardTitle className="text-[11px] text-muted-foreground sm:text-sm">
               Sudah memilih
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-emerald-600">{stats.sudahMemilih}</p>
+          <CardContent className="px-2 pb-3 sm:px-6 sm:pb-6">
+            <p className="text-xl font-bold text-emerald-600 sm:text-3xl">
+              {stats.sudahMemilih}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -174,14 +180,17 @@ export default function MahasiswaPage() {
             <strong>KELAS</strong>, <strong>ANGKATAN</strong>,{" "}
             <strong>PRODI</strong> (.xlsx / .xls / .csv)
           </p>
-          <form onSubmit={onUpload} className="flex flex-wrap items-center gap-3">
+          <form
+            onSubmit={onUpload}
+            className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+          >
             <Input
               type="file"
               name="file"
               accept=".xlsx,.xls,.csv"
-              className="max-w-md"
+              className="w-full max-w-md"
             />
-            <Button type="submit" disabled={uploading}>
+            <Button type="submit" disabled={uploading} className="w-full sm:w-auto">
               {uploading ? "Mengunggah..." : "Import"}
             </Button>
           </form>
@@ -192,31 +201,34 @@ export default function MahasiswaPage() {
         </CardContent>
       </Card>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(
-          [
-            ["ALL", "Semua"],
-            ["BELUM_MEMILIH", "Belum memilih"],
-            ["SUDAH_MEMILIH", "Sudah memilih"],
-          ] as const
-        ).map(([value, label]) => (
-          <Button
-            key={value}
-            size="sm"
-            variant={status === value ? "default" : "outline"}
-            onClick={() => setStatus(value)}
-          >
-            {label}
-          </Button>
-        ))}
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["ALL", "Semua"],
+              ["BELUM_MEMILIH", "Belum memilih"],
+              ["SUDAH_MEMILIH", "Sudah memilih"],
+            ] as const
+          ).map(([value, label]) => (
+            <Button
+              key={value}
+              size="sm"
+              variant={status === value ? "default" : "outline"}
+              onClick={() => setStatus(value)}
+              className="text-xs sm:text-sm"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
         <Input
-          className="min-w-[220px] flex-1"
+          className="w-full min-w-0 flex-1 sm:min-w-[220px]"
           placeholder="Cari NIM, nama, kelas, prodi..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-auto"
           value={pageSize}
           onChange={(e) => setPageSize(Number(e.target.value))}
         >
@@ -280,11 +292,11 @@ export default function MahasiswaPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground sm:text-sm">
           Menampilkan {from}–{to} dari {pagination.total} mahasiswa
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 sm:justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -294,7 +306,7 @@ export default function MahasiswaPage() {
             <ChevronLeft className="h-4 w-4" />
             Prev
           </Button>
-          <span className="text-sm tabular-nums">
+          <span className="text-xs tabular-nums sm:text-sm">
             Halaman {pagination.page} / {pagination.totalPages}
           </span>
           <Button

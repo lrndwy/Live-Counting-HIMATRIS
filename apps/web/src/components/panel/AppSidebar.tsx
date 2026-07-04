@@ -8,7 +8,6 @@ import {
   GraduationCap,
   LogOut,
   Radio,
-  RefreshCw,
   Users,
   UsersRound,
 } from "lucide-react";
@@ -35,7 +34,6 @@ const navItems: NavItem[] = [
   },
   { href: "/dashboard/paslon", label: "Paslon", icon: UsersRound, adminOnly: true },
   { href: "/dashboard/users", label: "Users", icon: Users, adminOnly: true },
-  { href: "/dashboard/sync", label: "Sinkronisasi", icon: RefreshCw, adminOnly: true },
 ];
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -45,8 +43,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const items = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="px-4 py-5">
+    <div className="flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground">
+      <div className="shrink-0 px-4 py-5">
         <p className="text-xs font-medium uppercase tracking-wider text-sky-300">
           HIMATRIS
         </p>
@@ -55,8 +53,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           {user?.displayName} · {user?.role}
         </p>
       </div>
-      <Separator className="bg-sidebar-border" />
-      <nav className="flex-1 space-y-1 p-3">
+      <Separator className="shrink-0 bg-sidebar-border" />
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {items.map((item) => {
           const active =
             item.href === "/dashboard"
@@ -81,7 +79,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
-      <div className="space-y-2 border-t border-sidebar-border p-3">
+      <div className="shrink-0 space-y-2 border-t border-sidebar-border p-3">
         <Button
           asChild
           variant="secondary"

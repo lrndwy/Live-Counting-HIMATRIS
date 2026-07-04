@@ -26,16 +26,6 @@ async function main() {
     [email, passwordHash, displayName]
   );
 
-  await pool.query(
-    `INSERT INTO settings (key, spreadsheet_id, sheet_name)
-     VALUES ('sync', $1, $2)
-     ON CONFLICT (key) DO NOTHING`,
-    [
-      process.env.SPREADSHEET_ID ?? "",
-      process.env.SHEET_NAME ?? "Form Responses 1",
-    ]
-  );
-
   console.log(`Admin ready: ${email}`);
   await pool.end();
 }

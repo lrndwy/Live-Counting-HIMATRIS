@@ -38,6 +38,8 @@ ENV NODE_PATH=/opt/db-tools/node_modules
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+RUN mkdir -p /app/uploads/paslon
+
 EXPOSE 3000
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

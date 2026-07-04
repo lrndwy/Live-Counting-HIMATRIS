@@ -47,6 +47,7 @@ export interface Paslon {
   namaKetua: string;
   namaWakil: string;
   fotoUrl?: string | null;
+  visiMisiUrl?: string | null;
   aktif: boolean;
 }
 
@@ -58,22 +59,13 @@ export interface UserProfile {
   active: boolean;
 }
 
-export interface SyncSettings {
-  spreadsheetId: string;
-  sheetName: string;
-  lastSyncAt: string | null;
-  lastSyncStatus: "ok" | "error" | null;
-  lastError: string | null;
-  lastUpserted?: number | null;
-  lastCreated?: number | null;
-  lastUpdated?: number | null;
-}
-
 export interface LiveCountRow {
   paslonId: string;
   nomor: string;
   namaKetua: string;
   namaWakil: string;
+  fotoUrl?: string | null;
+  visiMisiUrl?: string | null;
   total: number;
 }
 

@@ -9,8 +9,10 @@ export async function GET() {
     nomor: string;
     nama_ketua: string;
     nama_wakil: string;
+    foto_url: string | null;
+    visi_misi_url: string | null;
   }>(
-    `SELECT id, nomor, nama_ketua, nama_wakil
+    `SELECT id, nomor, nama_ketua, nama_wakil, foto_url, visi_misi_url
      FROM paslon
      WHERE aktif = true
      ORDER BY nomor ASC`
@@ -37,6 +39,8 @@ export async function GET() {
     nomor: p.nomor,
     namaKetua: p.nama_ketua,
     namaWakil: p.nama_wakil,
+    fotoUrl: p.foto_url,
+    visiMisiUrl: p.visi_misi_url,
     total: countMap.get(p.id) ?? countMap.get(p.nomor) ?? 0,
   }));
 
