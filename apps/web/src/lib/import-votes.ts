@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { pool } from "./db";
 import { recountAll } from "./counts";
-import { normalizeNim } from "./mahasiswa";
+import { normalizeNim, rejectIneligiblePendingVotes } from "./mahasiswa";
 import { parsePaslonId, voteIdFromRow } from "./vote-utils";
 
 export type VoteImportRow = {
@@ -258,6 +258,8 @@ export async function upsertVoteRows(rows: VoteImportRow[]) {
   } finally {
     client.release();
   }
+
+  await rejectIneligiblePendingVotes();
 
   if (updated > 0) {
     await recountAll();

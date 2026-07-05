@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { pool } from "./db";
-import { normalizeNim } from "./mahasiswa";
+import { normalizeNim, rejectIneligiblePendingVotes } from "./mahasiswa";
 
 export type ImportRow = {
   nim: string;
@@ -109,6 +109,8 @@ export async function upsertMahasiswaRows(rows: ImportRow[]) {
   } finally {
     client.release();
   }
+
+  await rejectIneligiblePendingVotes();
 
   return { inserted, updated, total: rows.length };
 }

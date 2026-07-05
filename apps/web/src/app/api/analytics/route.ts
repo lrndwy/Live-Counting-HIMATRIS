@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { rejectIneligiblePendingVotes } from "@/lib/mahasiswa";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const auth = await requireSession(["admin", "panwaslu"]);
   if (auth.error) return auth.error;
+
+  await rejectIneligiblePendingVotes();
 
   const [mhs, votes, paslon, pendingElig] = await Promise.all([
     query<{ total: string; belum: string; sudah: string }>(

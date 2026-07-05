@@ -66,6 +66,34 @@ export function canReviewVote(
   return eligibility === "ELIGIBLE";
 }
 
+/** SQL fragment: pending vote that fails automatic eligibility checks. */
+export function ineligiblePendingCondition(voteAlias = "v"): string {
+  const nim = `regexp_replace(trim(${voteAlias}.nim), '\\\\s+', '', 'g')`;
+  return `${voteAlias}.status = 'PENDING'
+    AND (
+      NOT EXISTS (
+        SELECT 1 FROM mahasiswa m WHERE m.nim = ${nim}
+      )
+      OR EXISTS (
+        SELECT 1 FROM mahasiswa m
+        WHERE m.nim = ${nim}
+          AND m.status_memilih = 'SUDAH_MEMILIH'
+          AND (m.voted_vote_id IS NULL OR m.voted_vote_id <> ${voteAlias}.id)
+      )
+    )`;
+}
+
+/** Move ineligible pending votes (NIM tidak terdaftar / double) to TIDAK_SAH. */
+export async function rejectIneligiblePendingVotes() {
+  const result = await query(
+    `UPDATE votes v
+     SET status = 'TIDAK_SAH',
+         reviewed_at = COALESCE(reviewed_at, now())
+     WHERE ${ineligiblePendingCondition("v")}`
+  );
+  return result.rowCount ?? 0;
+}
+
 /**
  * Apply vote status change with mahasiswa lock.
  * SAH requires NIM terdaftar + belum memilih (atau vote ini yang sudah SAH).
@@ -195,6 +223,8 @@ export async function applyVoteReview(params: {
       afterStatus: params.afterStatus,
       afterPaslonId: vote.paslon_id,
     });
+
+    await rejectIneligiblePendingVotes();
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

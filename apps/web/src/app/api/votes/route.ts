@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { mapVote } from "@/lib/mappers";
+import { rejectIneligiblePendingVotes } from "@/lib/mahasiswa";
 import type { MahasiswaStatus, VoteStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const auth = await requireSession(["admin", "panwaslu"]);
   if (auth.error) return auth.error;
+
+  await rejectIneligiblePendingVotes();
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");

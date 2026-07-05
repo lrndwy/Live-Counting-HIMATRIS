@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FileDown } from "lucide-react";
+import { toast } from "sonner";
 import {
   Bar,
   BarChart,
@@ -14,49 +16,21 @@ import {
   YAxis,
 } from "recharts";
 import { PanelShell } from "@/components/panel/PanelShell";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-type Analytics = {
-  mahasiswa: {
-    total: number;
-    belumMemilih: number;
-    sudahMemilih: number;
-    turnout: number;
-  };
-  votes: {
-    total: number;
-    pending: number;
-    sah: number;
-    tidakSah: number;
-    tidakSahPercent: number;
-  };
-  golput: { total: number; percent: number };
-  paslon: Array<{
-    paslonId: string;
-    nomor: string;
-    namaKetua: string;
-    namaWakil: string;
-    total: number;
-    percent: number;
-    percentOfMahasiswa: number;
-  }>;
-  pendingEligibility: {
-    eligible: number;
-    nimTidakTerdaftar: number;
-    sudahMemilih: number;
-  };
-};
+import type { AnalyticsData } from "@/lib/analytics-types";
 
 const COLORS = ["#0ea5e9", "#f59e0b", "#ec4899", "#10b981", "#6366f1"];
 const GOLPUT_COLOR = "#94a3b8";
 const TIDAK_SAH_COLOR = "#ef4444";
 
-function paslonLabel(row: Analytics["paslon"][number]) {
+function paslonLabel(row: AnalyticsData["paslon"][number]) {
   return `Paslon ${row.nomor} — ${row.namaKetua} & ${row.namaWakil}`;
 }
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState<Analytics | null>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -66,7 +40,7 @@ export default function AnalyticsPage() {
         cache: "no-store",
       });
       if (!res.ok || !active) return;
-      setData((await res.json()) as Analytics);
+      setData((await res.json()) as AnalyticsData);
     }
     void load();
     const timer = setInterval(() => void load(), 10000);
@@ -124,11 +98,41 @@ export default function AnalyticsPage() {
       ]
     : [];
 
+  async function handleExportPdf() {
+    if (!data) {
+      toast.error("Data belum tersedia");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const { exportAnalyticsPdf } = await import("@/lib/export-analytics-pdf");
+      exportAnalyticsPdf(data);
+      toast.success("Laporan PDF berhasil diunduh");
+    } catch {
+      toast.error("Gagal mengekspor PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <PanelShell
       title="Analytics"
       description="Ringkasan pemilu dan status verifikasi suara"
     >
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2 sm:mb-6">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!data || exporting}
+          onClick={() => void handleExportPdf()}
+        >
+          <FileDown className="h-4 w-4" />
+          {exporting ? "Menyiapkan PDF..." : "Export PDF"}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard title="Mahasiswa" value={data?.mahasiswa.total ?? "—"} />
         <StatCard
@@ -174,7 +178,7 @@ export default function AnalyticsPage() {
                   formatter={(value) => [`${value}%`, "Persentase"]}
                   labelFormatter={(_, payload) => {
                     const row = payload?.[0]?.payload as
-                      | Analytics["paslon"][number]
+                      | AnalyticsData["paslon"][number]
                       | undefined;
                     return row ? paslonLabel(row) : "";
                   }}
@@ -212,7 +216,7 @@ export default function AnalyticsPage() {
                   formatter={(value) => [value, "Total suara SAH"]}
                   labelFormatter={(_, payload) => {
                     const row = payload?.[0]?.payload as
-                      | Analytics["paslon"][number]
+                      | AnalyticsData["paslon"][number]
                       | undefined;
                     return row ? paslonLabel(row) : "";
                   }}

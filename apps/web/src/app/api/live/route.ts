@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { ineligiblePendingCondition } from "@/lib/mahasiswa";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,10 @@ export async function GET() {
     }>(`SELECT paslon_id, total, updated_at FROM counts`),
     query<{ tidak_sah: number; golput: number; total_mahasiswa: number }>(
       `SELECT
-         (SELECT COUNT(*)::int FROM votes WHERE status = 'TIDAK_SAH') AS tidak_sah,
+         (
+           (SELECT COUNT(*)::int FROM votes WHERE status = 'TIDAK_SAH')
+           + (SELECT COUNT(*)::int FROM votes v WHERE ${ineligiblePendingCondition("v")})
+         ) AS tidak_sah,
          (SELECT COUNT(*)::int
           FROM mahasiswa
           WHERE status_memilih = 'BELUM_MEMILIH') AS golput,
