@@ -99,13 +99,13 @@ export function LiveCounting() {
     const extra: typeof paslonData = [
       {
         name: "Tidak Sah",
-        label: "Suara tidak sah",
+        label: "Suara tidak sah (ditolak PANWASLU / NIM tidak terdaftar)",
         percent: toPercent(tidakSah),
         color: TIDAK_SAH_COLOR,
       },
       {
         name: "Golput",
-        label: "Mahasiswa belum memilih",
+        label: "Belum memilih (tanpa suara ditolak)",
         percent: toPercent(golput),
         color: GOLPUT_COLOR,
       },

@@ -23,6 +23,7 @@ import type { AnalyticsData } from "@/lib/analytics-types";
 const COLORS = ["#0ea5e9", "#f59e0b", "#ec4899", "#10b981", "#6366f1"];
 const GOLPUT_COLOR = "#94a3b8";
 const TIDAK_SAH_COLOR = "#ef4444";
+const DOUBLE_COLOR = "#f97316";
 
 function paslonLabel(row: AnalyticsData["paslon"][number]) {
   return `Paslon ${row.nomor} — ${row.namaKetua} & ${row.namaWakil}`;
@@ -83,18 +84,25 @@ export default function AnalyticsPage() {
         })),
         {
           name: "Golput",
-          label: "Mahasiswa belum memilih",
+          label: "Belum memilih (tanpa suara ditolak)",
           value: data.golput.total,
           percent: data.golput.percent,
           color: GOLPUT_COLOR,
         },
         {
           name: "Tidak SAH",
-          label: "Suara tidak sah",
-          value: data.votes.tidakSah,
-          percent: data.votes.tidakSahPercent,
+          label: "Ditolak PANWASLU / NIM tidak terdaftar",
+          value: data.tidakSah.total,
+          percent: data.tidakSah.percent,
           color: TIDAK_SAH_COLOR,
         },
+      ]
+    : [];
+
+  const adminIssueData = data
+    ? [
+        { name: "Suara double", value: data.double.total },
+        { name: "Tidak SAH", value: data.tidakSah.total },
       ]
     : [];
 
@@ -133,7 +141,7 @@ export default function AnalyticsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-7">
         <StatCard title="Mahasiswa" value={data?.mahasiswa.total ?? "—"} />
         <StatCard
           title="Sudah memilih"
@@ -149,8 +157,13 @@ export default function AnalyticsPage() {
         <StatCard title="Suara pending" value={data?.votes.pending ?? "—"} />
         <StatCard
           title="Tidak SAH"
-          value={data?.votes.tidakSah ?? "—"}
-          hint={`${data?.votes.tidakSahPercent ?? 0}% dari mahasiswa`}
+          value={data?.tidakSah.total ?? "—"}
+          hint={`${data?.tidakSah.percent ?? 0}% dari mahasiswa`}
+        />
+        <StatCard
+          title="Suara double"
+          value={data?.double.total ?? "—"}
+          hint={`${data?.double.percentOfVotes ?? 0}% dari total suara`}
         />
       </div>
 
@@ -323,11 +336,67 @@ export default function AnalyticsPage() {
                 <Tooltip
                   formatter={(value, name) => [
                     value,
-                    name === "Golput" ? "Mahasiswa belum memilih" : name,
+                    name === "Golput" ? "Belum memilih" : name,
                   ]}
                 />
               </PieChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
+              Suara double (sudah SAH)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
+            <div>
+              <p className="text-3xl font-bold tabular-nums sm:text-4xl">
+                {data?.double.total ?? "—"}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                Pengiriman suara/form tambahan dari mahasiswa yang sudah
+                memiliki suara SAH. Tidak masuk perhitungan live counting
+                maupun statistik tidak sah.
+              </p>
+              {data && data.pendingEligibility.sudahMemilih > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {data.pendingEligibility.sudahMemilih} masih antrian pending.
+                </p>
+              )}
+            </div>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={adminIssueData}
+                  layout="vertical"
+                  margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={72}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                    {adminIssueData.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={
+                          entry.name === "Suara double"
+                            ? DOUBLE_COLOR
+                            : TIDAK_SAH_COLOR
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -354,7 +423,12 @@ export default function AnalyticsPage() {
                 <Tooltip
                   formatter={(value, _name, item) => {
                     const row = item.payload as (typeof overviewData)[number];
-                    const unit = row.name === "Golput" ? "mahasiswa" : "suara";
+                    const unit =
+                      row.name === "Golput"
+                        ? "mahasiswa"
+                        : row.name === "Tidak SAH"
+                          ? "suara"
+                          : "suara SAH";
                     return [`${value}% (${row.value} ${unit})`, "Persentase"];
                   }}
                   labelFormatter={(_, payload) => {

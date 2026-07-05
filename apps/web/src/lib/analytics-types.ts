@@ -9,10 +9,15 @@ export type AnalyticsData = {
     total: number;
     pending: number;
     sah: number;
+    /** Jumlah record suara TIDAK_SAH (termasuk double, NIM luar DPT). */
     tidakSah: number;
-    tidakSahPercent: number;
+    tidakSahRecords: number;
   };
   golput: { total: number; percent: number };
+  /** Ditolak PANWASLU + NIM tidak terdaftar; double tidak dihitung. */
+  tidakSah: { total: number; percent: number };
+  /** Suara double — hanya dashboard & PDF. */
+  double: { total: number; percentOfVotes: number };
   paslon: Array<{
     paslonId: string;
     nomor: string;

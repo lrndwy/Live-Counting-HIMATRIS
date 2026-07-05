@@ -12,6 +12,7 @@ const COLORS = {
   ] as const,
   golput: [148, 163, 184] as const,
   tidakSah: [239, 68, 68] as const,
+  double: [249, 115, 22] as const,
   sah: [16, 185, 129] as const,
   pending: [245, 158, 11] as const,
   grid: [226, 232, 240] as const,
@@ -247,14 +248,19 @@ export function exportAnalyticsPdf(data: AnalyticsData) {
         String(data.golput.total),
         `${data.golput.percent}%`,
       ],
+      [
+        "Tidak SAH (semua suara)",
+        String(data.tidakSah.total),
+        `${data.tidakSah.percent}%`,
+      ],
+      [
+        "Suara double (sudah SAH)",
+        String(data.double.total),
+        `${data.double.percentOfVotes}% dari suara masuk`,
+      ],
       ["Total suara masuk", String(data.votes.total), "—"],
       ["Suara SAH", String(data.votes.sah), "—"],
       ["Suara pending", String(data.votes.pending), "—"],
-      [
-        "Suara tidak sah",
-        String(data.votes.tidakSah),
-        `${data.votes.tidakSahPercent}%`,
-      ],
     ],
     theme: "grid",
     headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: "bold" },
@@ -279,17 +285,17 @@ export function exportAnalyticsPdf(data: AnalyticsData) {
       ]),
       [
         "Golput",
-        "Mahasiswa belum memilih",
+        "Belum memilih (tanpa suara ditolak)",
         String(data.golput.total),
         "—",
         `${data.golput.percent}%`,
       ],
       [
         "Tidak SAH",
-        "Suara tidak sah",
-        String(data.votes.tidakSah),
+        "NIM tidak terdaftar / ditolak PANWASLU",
+        String(data.tidakSah.total),
         "—",
-        `${data.votes.tidakSahPercent}%`,
+        `${data.tidakSah.percent}%`,
       ],
     ],
     theme: "striped",
@@ -363,10 +369,10 @@ export function exportAnalyticsPdf(data: AnalyticsData) {
       },
       {
         label: "Tidak SAH",
-        value: data.votes.tidakSahPercent,
+        value: data.tidakSah.percent,
         max: 100,
         color: COLORS.tidakSah,
-        display: `${data.votes.tidakSahPercent}%`,
+        display: `${data.tidakSah.percent}%`,
       },
     ],
   });
@@ -400,11 +406,13 @@ export function exportAnalyticsPdf(data: AnalyticsData) {
       },
       {
         label: "Tidak SAH",
-        value: data.votes.tidakSah,
+        value: data.votes.tidakSahRecords,
         color: COLORS.tidakSah,
         percent:
           data.votes.total > 0
-            ? Math.round((data.votes.tidakSah / data.votes.total) * 1000) / 10
+            ? Math.round(
+                (data.votes.tidakSahRecords / data.votes.total) * 1000
+              ) / 10
             : 0,
       },
     ],
@@ -448,8 +456,63 @@ export function exportAnalyticsPdf(data: AnalyticsData) {
     margin: { left: 14, right: 14 },
   });
 
+  const afterPendingElig =
+    (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
+      ?.finalY ?? 120;
+
   autoTable(doc, {
-    startY: 130,
+    startY: afterPendingElig + 8,
+    head: [["Suara double (informasi admin)", "Jumlah / keterangan"]],
+    body: [
+      [
+        "Total suara double (mahasiswa sudah SAH)",
+        String(data.double.total),
+      ],
+      [
+        "Persentase dari total suara masuk",
+        `${data.double.percentOfVotes}%`,
+      ],
+      [
+        "Masih antrian pending",
+        String(data.pendingEligibility.sudahMemilih),
+      ],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: "bold" },
+    styles: { fontSize: 9 },
+    margin: { left: 14, right: 14 },
+  });
+
+  const afterDoubleTable =
+    (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
+      ?.finalY ?? 150;
+
+  const adminIssueMax = Math.max(data.double.total, data.tidakSah.total, 1);
+  drawHorizontalBarChart(doc, {
+    x: 14,
+    y: afterDoubleTable + 6,
+    width: 182,
+    title: "Perbandingan suara double vs tidak sah (admin)",
+    items: [
+      {
+        label: "Double",
+        value: data.double.total,
+        max: adminIssueMax,
+        color: COLORS.double,
+        display: String(data.double.total),
+      },
+      {
+        label: "Tidak SAH",
+        value: data.tidakSah.total,
+        max: adminIssueMax,
+        color: COLORS.tidakSah,
+        display: String(data.tidakSah.total),
+      },
+    ],
+  });
+
+  autoTable(doc, {
+    startY: afterDoubleTable + 38,
     head: [["Detail Paslon", "Informasi"]],
     body: data.paslon.map((p) => [
       paslonLabel(p),

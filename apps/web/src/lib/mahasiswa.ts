@@ -66,20 +66,87 @@ export function canReviewVote(
   return eligibility === "ELIGIBLE";
 }
 
+const VOTE_NIM = (voteAlias: string) =>
+  `regexp_replace(trim(${voteAlias}.nim), '\\\\s+', '', 'g')`;
+
+/** Suara double: mahasiswa sudah punya suara SAH lain. */
+export function doubleVoteCondition(voteAlias = "v"): string {
+  const nim = VOTE_NIM(voteAlias);
+  return `EXISTS (
+    SELECT 1 FROM mahasiswa m
+    WHERE m.nim = ${nim}
+      AND m.status_memilih = 'SUDAH_MEMILIH'
+      AND (m.voted_vote_id IS NULL OR m.voted_vote_id <> ${voteAlias}.id)
+  )`;
+}
+
+export function unregisteredNimCondition(voteAlias = "v"): string {
+  const nim = VOTE_NIM(voteAlias);
+  return `NOT EXISTS (SELECT 1 FROM mahasiswa m WHERE m.nim = ${nim})`;
+}
+
+/**
+ * Suara dihitung sebagai tidak sah:
+ * - ditolak PANWASLU (reviewed_by terisi), atau
+ * - NIM tidak terdaftar.
+ * Suara double TIDAK dihitung.
+ */
+export function tidakSahCountedCondition(voteAlias = "v"): string {
+  return `${voteAlias}.status = 'TIDAK_SAH'
+    AND NOT (${doubleVoteCondition(voteAlias)})
+    AND (
+      ${unregisteredNimCondition(voteAlias)}
+      OR ${voteAlias}.reviewed_by IS NOT NULL
+    )`;
+}
+
+export const SQL_TIDAK_SAH_COUNTED = `
+  SELECT COUNT(*)::int AS total
+  FROM votes v
+  WHERE ${tidakSahCountedCondition("v")}`;
+
+/**
+ * Suara double: mahasiswa sudah SAH, ada pengiriman suara/form tambahan.
+ * Hanya untuk analytics admin (tidak ditampilkan di live counting).
+ */
+export const SQL_DOUBLE_VOTES = `
+  SELECT COUNT(*)::int AS total
+  FROM votes v
+  WHERE ${doubleVoteCondition("v")}`;
+
+/** Pending NIM tidak terdaftar (belum di-reject) — live counting sementara. */
+export function pendingUnregisteredNimCondition(voteAlias = "v"): string {
+  return `${voteAlias}.status = 'PENDING'
+    AND ${unregisteredNimCondition(voteAlias)}`;
+}
+
+/** Untuk halaman publik: tidak sah terhitung + pending NIM tidak terdaftar. */
+export function sqlTidakSahIncludingPending(): string {
+  return `SELECT (
+    (SELECT COUNT(*)::int FROM votes v WHERE ${tidakSahCountedCondition("v")})
+    + (SELECT COUNT(*)::int FROM votes v WHERE ${pendingUnregisteredNimCondition("v")})
+  ) AS total`;
+}
+
+/**
+ * Mahasiswa BELUM_MEMILIH tanpa suara TIDAK_SAH (golput murni).
+ */
+export const SQL_GOLPUT_MAHASISWA = `
+  SELECT COUNT(*)::int AS total
+  FROM mahasiswa m
+  WHERE m.status_memilih = 'BELUM_MEMILIH'
+    AND NOT EXISTS (
+      SELECT 1 FROM votes v
+      WHERE ${VOTE_NIM("v")} = m.nim AND v.status = 'TIDAK_SAH'
+    )`;
+
 /** SQL fragment: pending vote that fails automatic eligibility checks. */
 export function ineligiblePendingCondition(voteAlias = "v"): string {
-  const nim = `regexp_replace(trim(${voteAlias}.nim), '\\\\s+', '', 'g')`;
+  const nim = VOTE_NIM(voteAlias);
   return `${voteAlias}.status = 'PENDING'
     AND (
-      NOT EXISTS (
-        SELECT 1 FROM mahasiswa m WHERE m.nim = ${nim}
-      )
-      OR EXISTS (
-        SELECT 1 FROM mahasiswa m
-        WHERE m.nim = ${nim}
-          AND m.status_memilih = 'SUDAH_MEMILIH'
-          AND (m.voted_vote_id IS NULL OR m.voted_vote_id <> ${voteAlias}.id)
-      )
+      ${unregisteredNimCondition(voteAlias)}
+      OR ${doubleVoteCondition(voteAlias)}
     )`;
 }
 

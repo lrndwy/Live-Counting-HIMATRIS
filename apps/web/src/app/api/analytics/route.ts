@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { rejectIneligiblePendingVotes } from "@/lib/mahasiswa";
+import {
+  rejectIneligiblePendingVotes,
+  SQL_GOLPUT_MAHASISWA,
+  SQL_TIDAK_SAH_COUNTED,
+  SQL_DOUBLE_VOTES,
+} from "@/lib/mahasiswa";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +16,8 @@ export async function GET() {
 
   await rejectIneligiblePendingVotes();
 
-  const [mhs, votes, paslon, pendingElig] = await Promise.all([
+  const [mhs, votes, paslon, pendingElig, golputRow, tidakSahRow, doubleRow] =
+    await Promise.all([
     query<{ total: string; belum: string; sudah: string }>(
       `SELECT
          COUNT(*)::text AS total,
@@ -49,6 +55,9 @@ export async function GET() {
        WHERE v.status = 'PENDING'
        GROUP BY 1`
     ),
+    query<{ total: number }>(SQL_GOLPUT_MAHASISWA),
+    query<{ total: number }>(SQL_TIDAK_SAH_COUNTED),
+    query<{ total: number }>(SQL_DOUBLE_VOTES),
   ]);
 
   const voteMap = Object.fromEntries(
@@ -78,10 +87,15 @@ export async function GET() {
     };
   });
 
+  const golputTotal = golputRow.rows[0]?.total ?? 0;
+  const tidakSahTotal = tidakSahRow.rows[0]?.total ?? tidakSah;
+  const doubleTotal = doubleRow.rows[0]?.total ?? 0;
   const golputPercent =
-    mhsTotal > 0 ? Math.round((belumMemilih / mhsTotal) * 1000) / 10 : 0;
+    mhsTotal > 0 ? Math.round((golputTotal / mhsTotal) * 1000) / 10 : 0;
   const tidakSahPercent =
-    mhsTotal > 0 ? Math.round((tidakSah / mhsTotal) * 1000) / 10 : 0;
+    mhsTotal > 0 ? Math.round((tidakSahTotal / mhsTotal) * 1000) / 10 : 0;
+  const doublePercentOfVotes =
+    totalVotes > 0 ? Math.round((doubleTotal / totalVotes) * 1000) / 10 : 0;
 
   const eligibilityPending = {
     eligible: 0,
@@ -98,8 +112,16 @@ export async function GET() {
 
   return NextResponse.json({
     mahasiswa: { total: mhsTotal, belumMemilih, sudahMemilih, turnout },
-    votes: { total: totalVotes, pending, sah, tidakSah, tidakSahPercent },
-    golput: { total: belumMemilih, percent: golputPercent },
+    votes: {
+      total: totalVotes,
+      pending,
+      sah,
+      tidakSah,
+      tidakSahRecords: tidakSah,
+    },
+    golput: { total: golputTotal, percent: golputPercent },
+    tidakSah: { total: tidakSahTotal, percent: tidakSahPercent },
+    double: { total: doubleTotal, percentOfVotes: doublePercentOfVotes },
     paslon: paslonRows,
     pendingEligibility: eligibilityPending,
   });
