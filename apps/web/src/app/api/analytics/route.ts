@@ -70,8 +70,15 @@ export async function GET() {
       namaWakil: p.nama_wakil,
       total,
       percent: sah > 0 ? Math.round((total / sah) * 1000) / 10 : 0,
+      percentOfMahasiswa:
+        mhsTotal > 0 ? Math.round((total / mhsTotal) * 1000) / 10 : 0,
     };
   });
+
+  const golputPercent =
+    mhsTotal > 0 ? Math.round((belumMemilih / mhsTotal) * 1000) / 10 : 0;
+  const tidakSahPercent =
+    mhsTotal > 0 ? Math.round((tidakSah / mhsTotal) * 1000) / 10 : 0;
 
   const eligibilityPending = {
     eligible: 0,
@@ -88,7 +95,8 @@ export async function GET() {
 
   return NextResponse.json({
     mahasiswa: { total: mhsTotal, belumMemilih, sudahMemilih, turnout },
-    votes: { total: totalVotes, pending, sah, tidakSah },
+    votes: { total: totalVotes, pending, sah, tidakSah, tidakSahPercent },
+    golput: { total: belumMemilih, percent: golputPercent },
     paslon: paslonRows,
     pendingEligibility: eligibilityPending,
   });

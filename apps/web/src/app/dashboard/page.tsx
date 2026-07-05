@@ -23,7 +23,14 @@ type Analytics = {
     sudahMemilih: number;
     turnout: number;
   };
-  votes: { total: number; pending: number; sah: number; tidakSah: number };
+  votes: {
+    total: number;
+    pending: number;
+    sah: number;
+    tidakSah: number;
+    tidakSahPercent: number;
+  };
+  golput: { total: number; percent: number };
   paslon: Array<{
     paslonId: string;
     nomor: string;
@@ -31,6 +38,7 @@ type Analytics = {
     namaWakil: string;
     total: number;
     percent: number;
+    percentOfMahasiswa: number;
   }>;
   pendingEligibility: {
     eligible: number;
@@ -40,6 +48,12 @@ type Analytics = {
 };
 
 const COLORS = ["#0ea5e9", "#f59e0b", "#ec4899", "#10b981", "#6366f1"];
+const GOLPUT_COLOR = "#94a3b8";
+const TIDAK_SAH_COLOR = "#ef4444";
+
+function paslonLabel(row: Analytics["paslon"][number]) {
+  return `Paslon ${row.nomor} — ${row.namaKetua} & ${row.namaWakil}`;
+}
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<Analytics | null>(null);
@@ -84,20 +98,56 @@ export default function AnalyticsPage() {
       ]
     : [];
 
+  const overviewData = data
+    ? [
+        ...data.paslon.map((p) => ({
+          name: `Paslon ${p.nomor}`,
+          label: paslonLabel(p),
+          value: p.total,
+          percent: p.percentOfMahasiswa,
+          color: undefined as string | undefined,
+        })),
+        {
+          name: "Golput",
+          label: "Mahasiswa belum memilih",
+          value: data.golput.total,
+          percent: data.golput.percent,
+          color: GOLPUT_COLOR,
+        },
+        {
+          name: "Tidak SAH",
+          label: "Suara tidak sah",
+          value: data.votes.tidakSah,
+          percent: data.votes.tidakSahPercent,
+          color: TIDAK_SAH_COLOR,
+        },
+      ]
+    : [];
+
   return (
     <PanelShell
       title="Analytics"
       description="Ringkasan pemilu dan status verifikasi suara"
     >
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard title="Mahasiswa" value={data?.mahasiswa.total ?? "—"} />
         <StatCard
           title="Sudah memilih"
           value={data?.mahasiswa.sudahMemilih ?? "—"}
           hint={`${data?.mahasiswa.turnout ?? 0}% partisipasi`}
         />
-        <StatCard title="Suara pending" value={data?.votes.pending ?? "—"} />
+        <StatCard
+          title="Golput"
+          value={data?.golput.total ?? "—"}
+          hint={`${data?.golput.percent ?? 0}% dari mahasiswa`}
+        />
         <StatCard title="Suara SAH" value={data?.votes.sah ?? "—"} />
+        <StatCard title="Suara pending" value={data?.votes.pending ?? "—"} />
+        <StatCard
+          title="Tidak SAH"
+          value={data?.votes.tidakSah ?? "—"}
+          hint={`${data?.votes.tidakSahPercent ?? 0}% dari mahasiswa`}
+        />
       </div>
 
       <div className="mt-4 grid gap-4 sm:mt-6 lg:grid-cols-2">
@@ -126,12 +176,48 @@ export default function AnalyticsPage() {
                     const row = payload?.[0]?.payload as
                       | Analytics["paslon"][number]
                       | undefined;
-                    return row
-                      ? `Paslon ${row.nomor} — ${row.namaKetua} & ${row.namaWakil}`
-                      : "";
+                    return row ? paslonLabel(row) : "";
                   }}
                 />
                 <Bar dataKey="percent" radius={[6, 6, 0, 0]}>
+                  {(data?.paslon ?? []).map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
+              Total suara per paslon
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-56 px-2 sm:h-80 sm:px-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data?.paslon ?? []}
+                margin={{ top: 8, right: 4, left: -12, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="nomor"
+                  tickFormatter={(v) => `P${v}`}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis allowDecimals={false} width={36} tick={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value) => [value, "Total suara SAH"]}
+                  labelFormatter={(_, payload) => {
+                    const row = payload?.[0]?.payload as
+                      | Analytics["paslon"][number]
+                      | undefined;
+                    return row ? paslonLabel(row) : "";
+                  }}
+                />
+                <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                   {(data?.paslon ?? []).map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
@@ -213,8 +299,8 @@ export default function AnalyticsPage() {
                       value: data?.mahasiswa.sudahMemilih ?? 0,
                     },
                     {
-                      name: "Belum memilih",
-                      value: data?.mahasiswa.belumMemilih ?? 0,
+                      name: "Golput",
+                      value: data?.golput.total ?? 0,
                     },
                   ]}
                   dataKey="value"
@@ -228,10 +314,61 @@ export default function AnalyticsPage() {
                   }
                 >
                   <Cell fill="#10b981" />
-                  <Cell fill="#f59e0b" />
+                  <Cell fill={GOLPUT_COLOR} />
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  formatter={(value, name) => [
+                    value,
+                    name === "Golput" ? "Mahasiswa belum memilih" : name,
+                  ]}
+                />
               </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">
+              Ringkasan persentase (paslon, golput, tidak sah)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-56 px-2 sm:h-80 sm:px-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={overviewData}
+                margin={{ top: 8, right: 4, left: -12, bottom: 8 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis
+                  domain={[0, 100]}
+                  unit="%"
+                  width={36}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip
+                  formatter={(value, _name, item) => {
+                    const row = item.payload as (typeof overviewData)[number];
+                    const unit = row.name === "Golput" ? "mahasiswa" : "suara";
+                    return [`${value}% (${row.value} ${unit})`, "Persentase"];
+                  }}
+                  labelFormatter={(_, payload) => {
+                    const row = payload?.[0]?.payload as
+                      | (typeof overviewData)[number]
+                      | undefined;
+                    return row?.label ?? "";
+                  }}
+                />
+                <Bar dataKey="percent" radius={[6, 6, 0, 0]}>
+                  {overviewData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry.color ?? COLORS[i % COLORS.length]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
