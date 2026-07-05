@@ -19,6 +19,8 @@ import { MEDIA_ASSETS, paslonMedia } from "@/lib/media";
 import type { LiveCountRow } from "@/lib/types";
 
 const CHART_COLORS = ["#22d3ee", "#fbbf24", "#e879f9", "#34d399", "#60a5fa"];
+const TIDAK_SAH_COLOR = "#f87171";
+const GOLPUT_COLOR = "#94a3b8";
 
 const ACCENT = [
   { bar: "from-cyan-400 to-sky-500", ring: "ring-cyan-400/40", glow: "shadow-cyan-500/30" },
@@ -29,6 +31,9 @@ const ACCENT = [
 export function LiveCounting() {
   const [rows, setRows] = useState<LiveCountRow[]>([]);
   const [grandTotal, setGrandTotal] = useState(0);
+  const [tidakSah, setTidakSah] = useState(0);
+  const [golput, setGolput] = useState(0);
+  const [chartTotal, setChartTotal] = useState(0);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visiMisi, setVisiMisi] = useState<{
@@ -46,11 +51,17 @@ export function LiveCounting() {
         const data = (await res.json()) as {
           rows: LiveCountRow[];
           grandTotal: number;
+          tidakSah: number;
+          golput: number;
+          chartTotal: number;
           updatedAt: string | null;
         };
         if (!active) return;
         setRows(data.rows);
         setGrandTotal(data.grandTotal);
+        setTidakSah(data.tidakSah);
+        setGolput(data.golput);
+        setChartTotal(data.chartTotal);
         setUpdatedAt(data.updatedAt);
       } finally {
         if (active) setLoading(false);
@@ -74,21 +85,34 @@ export function LiveCounting() {
     return () => window.removeEventListener("keydown", onKey);
   }, [visiMisi]);
 
-  const chartData = useMemo(
-    () =>
-      rows.map((row) => {
-        const percent =
-          grandTotal > 0
-            ? Math.round((row.total / grandTotal) * 1000) / 10
-            : 0;
-        return {
-          name: `Paslon ${row.nomor}`,
-          label: `${row.namaKetua} & ${row.namaWakil}`,
-          percent,
-        };
-      }),
-    [rows, grandTotal]
-  );
+  const chartData = useMemo(() => {
+    const toPercent = (value: number) =>
+      chartTotal > 0 ? Math.round((value / chartTotal) * 1000) / 10 : 0;
+
+    const paslonData = rows.map((row) => ({
+      name: `Paslon ${row.nomor}`,
+      label: `${row.namaKetua} & ${row.namaWakil}`,
+      percent: toPercent(row.total),
+      color: undefined as string | undefined,
+    }));
+
+    const extra: typeof paslonData = [
+      {
+        name: "Tidak Sah",
+        label: "Suara tidak sah",
+        percent: toPercent(tidakSah),
+        color: TIDAK_SAH_COLOR,
+      },
+      {
+        name: "Golput",
+        label: "Mahasiswa belum memilih",
+        percent: toPercent(golput),
+        color: GOLPUT_COLOR,
+      },
+    ];
+
+    return [...paslonData, ...extra];
+  }, [rows, chartTotal, tidakSah, golput]);
 
   const leaderId =
     rows.length > 0
@@ -270,9 +294,26 @@ export function LiveCounting() {
 
             <section className="mt-6 grid gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-black/50 p-4 backdrop-blur-md sm:rounded-3xl sm:p-5">
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-sky-300 sm:mb-4 sm:text-sm">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-sky-300 sm:text-sm">
                   Grafik Batang Persentase
                 </h3>
+                <p className="mb-3 text-[11px] text-slate-400 sm:mb-4 sm:text-xs">
+                  Tidak Sah:{" "}
+                  <span className="font-semibold text-red-300">
+                    {chartTotal > 0
+                      ? Math.round((tidakSah / chartTotal) * 1000) / 10
+                      : 0}
+                    %
+                  </span>
+                  {" · "}
+                  Golput:{" "}
+                  <span className="font-semibold text-slate-300">
+                    {chartTotal > 0
+                      ? Math.round((golput / chartTotal) * 1000) / 10
+                      : 0}
+                    %
+                  </span>
+                </p>
                 <div className="h-56 sm:h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 8, right: 4, left: -12, bottom: 8 }}>
@@ -298,10 +339,13 @@ export function LiveCounting() {
                         }
                       />
                       <Bar dataKey="percent" radius={[8, 8, 0, 0]}>
-                        {chartData.map((_, index) => (
+                        {chartData.map((entry, index) => (
                           <Cell
                             key={index}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            fill={
+                              entry.color ??
+                              CHART_COLORS[index % CHART_COLORS.length]
+                            }
                           />
                         ))}
                       </Bar>
@@ -311,9 +355,26 @@ export function LiveCounting() {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/50 p-4 backdrop-blur-md sm:rounded-3xl sm:p-5">
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-sky-300 sm:mb-4 sm:text-sm">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-sky-300 sm:text-sm">
                   Grafik Proporsi Suara
                 </h3>
+                <p className="mb-3 text-[11px] text-slate-400 sm:mb-4 sm:text-xs">
+                  Tidak Sah:{" "}
+                  <span className="font-semibold text-red-300">
+                    {chartTotal > 0
+                      ? Math.round((tidakSah / chartTotal) * 1000) / 10
+                      : 0}
+                    %
+                  </span>
+                  {" · "}
+                  Golput:{" "}
+                  <span className="font-semibold text-slate-300">
+                    {chartTotal > 0
+                      ? Math.round((golput / chartTotal) * 1000) / 10
+                      : 0}
+                    %
+                  </span>
+                </p>
                 <div className="h-56 sm:h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -333,10 +394,13 @@ export function LiveCounting() {
                           return `${value}%`;
                         }}
                       >
-                        {chartData.map((_, index) => (
+                        {chartData.map((entry, index) => (
                           <Cell
                             key={index}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            fill={
+                              entry.color ??
+                              CHART_COLORS[index % CHART_COLORS.length]
+                            }
                           />
                         ))}
                       </Pie>

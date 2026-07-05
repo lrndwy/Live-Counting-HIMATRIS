@@ -4,25 +4,34 @@ import { query } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const paslonResult = await query<{
-    id: string;
-    nomor: string;
-    nama_ketua: string;
-    nama_wakil: string;
-    foto_url: string | null;
-    visi_misi_url: string | null;
-  }>(
-    `SELECT id, nomor, nama_ketua, nama_wakil, foto_url, visi_misi_url
-     FROM paslon
-     WHERE aktif = true
-     ORDER BY nomor ASC`
-  );
-
-  const countsResult = await query<{
-    paslon_id: string;
-    total: number;
-    updated_at: Date;
-  }>(`SELECT paslon_id, total, updated_at FROM counts`);
+  const [paslonResult, countsResult, statsResult] = await Promise.all([
+    query<{
+      id: string;
+      nomor: string;
+      nama_ketua: string;
+      nama_wakil: string;
+      foto_url: string | null;
+      visi_misi_url: string | null;
+    }>(
+      `SELECT id, nomor, nama_ketua, nama_wakil, foto_url, visi_misi_url
+       FROM paslon
+       WHERE aktif = true
+       ORDER BY nomor ASC`
+    ),
+    query<{
+      paslon_id: string;
+      total: number;
+      updated_at: Date;
+    }>(`SELECT paslon_id, total, updated_at FROM counts`),
+    query<{ tidak_sah: number; golput: number; total_mahasiswa: number }>(
+      `SELECT
+         (SELECT COUNT(*)::int FROM votes WHERE status = 'TIDAK_SAH') AS tidak_sah,
+         (SELECT COUNT(*)::int
+          FROM mahasiswa
+          WHERE status_memilih = 'BELUM_MEMILIH') AS golput,
+         (SELECT COUNT(*)::int FROM mahasiswa) AS total_mahasiswa`
+    ),
+  ]);
 
   const countMap = new Map(
     countsResult.rows.map((r) => [r.paslon_id, r.total])
@@ -45,6 +54,18 @@ export async function GET() {
   }));
 
   const grandTotal = rows.reduce((sum, r) => sum + r.total, 0);
+  const tidakSah = statsResult.rows[0]?.tidak_sah ?? 0;
+  const golput = statsResult.rows[0]?.golput ?? 0;
+  const totalMahasiswa = statsResult.rows[0]?.total_mahasiswa ?? 0;
+  const chartTotal = totalMahasiswa > 0 ? totalMahasiswa : grandTotal + golput;
 
-  return NextResponse.json({ rows, grandTotal, updatedAt });
+  return NextResponse.json({
+    rows,
+    grandTotal,
+    tidakSah,
+    golput,
+    totalMahasiswa,
+    chartTotal,
+    updatedAt,
+  });
 }
